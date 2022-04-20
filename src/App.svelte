@@ -1,8 +1,9 @@
 <script>
+  import Copy from './Copy.svelte';
 
   export let
     tweet = '',
-    twitterAt = '@',
+    twitterAt = '',
     primaryLink = '',
     emailSubject = '',
     emailBody = '',
@@ -14,8 +15,8 @@
     facebookErrors,
     facebookOutput,
     whatsappOutput,
-    emailOutput,
     whatsappErrors,
+    emailOutput,
     emailErrors,
     urlSafeLink,
     warnings
@@ -27,6 +28,10 @@
     whatsappErrors = [];
     emailErrors = [];
     warnings = [];
+    emailOutput = '';
+    facebookOutput = '';
+    whatsappOutput = '';
+    emailOutput = '';
 
     if (!primaryLink.match(/^https:\/\/./)) {
       twitterErrors.push("Need link");
@@ -38,12 +43,16 @@
     if (!tweet) {
       twitterErrors.push("Need tweet text");
     }
-    let tweetContent = tweet + (twitterAt.match(/^@[\w+]/) ? twitterAt : '');
+    let tweetContent = tweet;
     if (tweetContent.length > 280) {
       twitterErrors.push(`Tweet is ${tweetContent - 280} characters too long.`);
     }
+    if (twitterAt && !twitterAt.match(/^@?[a-zA-Z0-9_]+$/)) {
+      twitterErrors.push("Username invalid.");
+    }
     twitterOutput = (twitterErrors.length === 0)
       ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}&url=${urlSafeLink}`
+      + (twitterAt.match(/^@?[a-zA-Z0-9_]+$/) ? '&via=' + encodeURIComponent(twitterAt.replace(/^@/, '')) : '')
       : null;
 
     if (!waText) {
@@ -72,6 +81,7 @@
     }));
   };
 
+
 </script>
 
 <style lang=scss>
@@ -81,12 +91,18 @@
     padding: 2rem;
     background: white;
     font-family: Lato, sans-serif;
+    box-sizing: border-box;
 
     display: flex;
     flex-wrap: wrap;
     h1 { flex: 0 0 100%;}
     form { flex: 1 0 50ch; padding: 2rem; }
     .outputs { flex: 1 0 50ch;padding: 2rem;  }
+  }
+  p.smallprint {
+    font-size: 0.875rem;
+    color: #444;
+    margin: 0;
   }
 
   h1 {
@@ -129,6 +145,8 @@
 
   a.button {
     background: #1577d9;
+    width: 12ch;
+    margin-right: 1.4ch;
     color: white;
     text-align: center;
     padding: 0.5ch 1ch;
@@ -159,8 +177,8 @@
       <textarea rows=5 id="twitter-tweet" bind:value={tweet} ></textarea>
     </div>
     <div class="form-item">
-      <label for="twitter-at">Twitter @account</label>
-      <input type=text id="twitter-at" bind:value={twitterAt} pattern="^@.*"/>
+      <label for="twitter-at">Twitter @account (without the @)</label>
+      <input type=text id="twitter-at" bind:value={twitterAt} />
     </div>
 
     <div class="form-item">
@@ -183,7 +201,7 @@
     <div class="output">
       <h2>Twitter</h2>
       {#if twitterOutput}
-        <a class="button" href={twitterOutput} target="_blank" title="Tweet" >Tweet</a>
+        <a class="button" href={twitterOutput} target="_blank" title="Tweet" >Tweet</a> <Copy textToCopy={twitterOutput} />
       {:else}
         <ul class="errors">
           {#each twitterErrors as error}
@@ -196,7 +214,7 @@
     <div class="output">
       <h2>Facebook</h2>
       {#if facebookOutput}
-        <a class="button" href={facebookOutput} target="_blank" title="Share on Facebook" >Facebook</a>
+        <a class="button" href={facebookOutput} target="_blank" title="Share on Facebook" >Facebook</a> <Copy textToCopy={facebookOutput} />
       {:else}
         <ul class="errors">
           {#each facebookErrors as error}
@@ -209,7 +227,8 @@
     <div class="output">
       <h2>WhatsApp</h2>
       {#if whatsappOutput}
-        <a class="button" href={whatsappOutput} target="_blank" title="Share on whatsapp" >WhatsApp</a><br/>(note: only works on a device with WhatsApp installed)
+        <a class="button" href={whatsappOutput} target="_blank" title="Share on whatsapp" >WhatsApp</a>  <Copy textToCopy={whatsappOutput} />
+        <p class="smallprint">(note: only works on a device with WhatsApp installed)</p>
       {:else}
         <ul class="errors">
           {#each whatsappErrors as error}
@@ -222,7 +241,7 @@
     <div class="output">
       <h2>Email</h2>
       {#if emailOutput}
-        <a class="button" href={emailOutput} target="_blank" title="Share by Email" >Email</a>
+        <a class="button" href={emailOutput} target="_blank" title="Share by Email" >Email</a>  <Copy textToCopy={emailOutput} />
       {:else}
         <ul class="errors">
           {#each emailErrors as error}
